@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>교실 폭탄 돌리기</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+  <style>
+    :root {
+      --bg-1: #fff8dc;
+      --bg-2: #ffd7ba;
+      --bg-3: #ffeef6;
+      --ink: #2f2a44;
+      --card: rgba(255, 255, 255, 0.82);
+      --shadow: rgba(47, 42, 68, 0.18);
+      --accent: #ff7f50;
+      --accent-2: #ffcf4d;
+      --danger: #ff5f5f;
+      --mint: #62d2a2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Jua", sans-serif;
+      background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 55%, var(--bg-3) 100%);
+      color: var(--ink);
+      overflow: hidden;
+    }
+
+    body {
+      position: relative;
+    }
+
+    .stage-shell {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .decor-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .decor {
+      position: absolute;
+      top: -12vh;
+      opacity: 0.72;
+      animation: float-drop linear infinite;
+      transform-origin: center;
+    }
+
+    .decor svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 6px 10px rgba(47, 42, 68, 0.1));
+    }
+
+    @keyframes float-drop {
+      0% {
+        transform: translate3d(0, -15vh, 0) rotate(0deg);
+      }
+      25% {
+        transform: translate3d(8px, 15vh, 0) rotate(15deg);
+      }
+      50% {
+        transform: translate3d(-10px, 40vh, 0) rotate(-12deg);
+      }
+      75% {
+        transform: translate3d(12px, 70vh, 0) rotate(18deg);
+      }
+      100% {
+        transform: translate3d(-6px, 120vh, 0) rotate(-8deg);
+      }
+    }
+
+    .panel {
+      position: relative;
+      width: min(92vw, 540px);
+      padding: 30px 28px;
+      border-radius: 34px;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 24px 50px var(--shadow);
+      border: 4px solid rgba(255, 255, 255, 0.68);
+      text-align: center;
+      z-index: 2;
+    }
+
+    h1, h2, p {
+      margin: 0;
+    }
+
+    .title {
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      line-height: 1;
+      letter-spacing: 0.02em;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
+      color: rgba(47, 42, 68, 0.74);
+      margin-bottom: 26px;
+    }
+
+    .inputs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 1.1rem;
+      text-align: left;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      border: 3px solid #ffd27c;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 1.2rem;
+      color: var(--ink);
+      background: rgba(255, 251, 240, 0.95);
+      outline: none;
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+    }
+
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 6px rgba(255, 127, 80, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .warning {
+      min-height: 28px;
+      margin-bottom: 14px;
+      color: #ff4b77;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 28px;
+      font: inherit;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+      box-shadow: 0 10px 20px rgba(47, 42, 68, 0.16);
+    }
+
+    button:hover {
+      transform: translateY(-2px) scale(1.01);
+      filter: brightness(1.03);
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .start-btn {
+      background: linear-gradient(180deg, #ffd95a 0%, #ff9f5a 100%);
+      color: #5a2d00;
+    }
+
+    .stop-btn {
+      background: linear-gradient(180deg, #fff 0%, #ffe4ec 100%);
+      color: #9b3153;
+    }
+
+    .stage {
+      display: none;
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      min-height: 100vh;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .stage.active {
+      display: grid;
+    }
+
+    .game-wrap {
+      width: min(94vw, 1080px);
+      display: grid;
+      gap: 24px;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .bomb-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .bomb-card {
+      position: relative;
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      padding: 18px 14px 20px;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 3px solid rgba(255, 255, 255, 0.72);
+      box-shadow: 0 18px 32px rgba(47, 42, 68, 0.12);
+      min-height: 280px;
+    }
+
+    .bomb-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff7b8 0%, #ffc86d 100%);
+      color: #6a3f00;
+      font-size: 1rem;
+      box-shadow: 0 8px 14px rgba(95, 61, 0, 0.15);
+    }
+
+    .bomb-visual {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      flex: 1;
+    }
+
+    .bomb-shell,
+    .boom-slot {
+      width: min(100%, 220px);
+      filter: drop-shadow(0 30px 30px rgba(47, 42, 68, 0.22));
+      transform-origin: center 72%;
+      transition: transform 120ms ease;
+    }
+
+    .bomb-shell.shake {
+      animation: bomb-burst 360ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    @keyframes bomb-burst {
+      0% { transform: translateX(0) rotate(0deg) scale(1); }
+      14% { transform: translateX(-16px) rotate(-8deg) scale(1.06); }
+      28% { transform: translateX(18px) rotate(9deg) scale(1.09); }
+      45% { transform: translateX(-10px) rotate(-6deg) scale(1.03); }
+      60% { transform: translateX(13px) rotate(5deg) scale(1.08); }
+      82% { transform: translateX(-4px) rotate(-2deg) scale(1.01); }
+      100% { transform: translateX(0) rotate(0deg) scale(1); }
+    }
+
+    .suspense {
+      min-height: 44px;
+      width: min(92vw, 680px);
+      font-size: clamp(1.2rem, 2.8vw, 1.6rem);
+      color: rgba(47, 42, 68, 0.86);
+      text-shadow: 0 2px 0 rgba(255,255,255,0.3);
+      animation: suspense-pop 320ms ease;
+    }
+
+    @keyframes suspense-pop {
+      0% { transform: translateY(8px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    .boom-slot {
+      display: grid;
+      place-items: center;
+      position: relative;
+      transform: scale(0.2);
+      opacity: 0;
+    }
+
+    .boom-slot.active {
+      animation: boom-pop 500ms cubic-bezier(.18,1,.32,1) forwards;
+    }
+
+    @keyframes boom-pop {
+      0% { transform: scale(0.2) rotate(-18deg); opacity: 0; }
+      60% { transform: scale(1.22) rotate(6deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes screen-rattle {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-12px, 8px); }
+      50% { transform: translate(14px, -6px); }
+      75% { transform: translate(-10px, -8px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .boom-text {
+      position: absolute;
+      font-size: clamp(2.6rem, 8vw, 4.4rem);
+      color: #fffef3;
+      text-shadow:
+        0 4px 0 #ff7a29,
+        0 10px 24px rgba(125, 34, 0, 0.38);
+      letter-spacing: 0.08em;
+    }
+
+    .bomb-card.exploded {
+      animation: screen-rattle 420ms linear 2;
+      background: rgba(255, 237, 216, 0.9);
+    }
+
+    .bomb-card.exploded .bomb-label {
+      background: linear-gradient(180deg, #ffd0b8 0%, #ff9a6b 100%);
+      color: #7a2400;
+    }
+
+    @media (max-width: 640px) {
+      .panel {
+        padding: 24px 18px;
+        border-radius: 28px;
+      }
+
+      .inputs {
+        grid-template-columns: 1fr;
+      }
+
+      .bomb-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .bomb-card {
+        min-height: 240px;
+        padding: 16px 10px 18px;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .button-row {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .bomb-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage-shell">
+    <div class="decor-layer" id="decorLayer" aria-hidden="true"></div>
+
+    <section class="stage active" id="setupStage" aria-label="설정 화면">
+      <div class="panel">
+        <h1 class="title">폭탄 돌리기</h1>
+        <p class="subtitle">교실에서 바로 시작하는 두근두근 랜덤 타이머</p>
+        <div class="inputs">
+          <label>
+            최소 시간(초)
+            <input id="minTime" type="number" min="1" step="1" inputmode="numeric" value="10">
+          </label>
+          <label>
+            최대 시간(초)
+            <input id="maxTime" type="number" min="1" step="1" inputmode="numeric" value="30">
+          </label>
+          <label>
+            폭탄 개수
+            <input id="bombCount" type="number" min="1" max="10" step="1" inputmode="numeric" value="4">
+          </label>
+        </div>
+        <div class="warning" id="warningText" aria-live="polite"></div>
+        <div class="button-row">
+          <button class="start-btn" id="startButton" type="button">시작!</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage" id="playStage" aria-label="폭탄 동작 화면">
+      <div class="game-wrap">
+        <div class="bomb-grid" id="bombGrid" aria-live="polite"></div>
+        <div class="suspense" id="suspenseText" aria-live="polite"></div>
+        <div class="button-row">
+          <button class="stop-btn" id="stopButton" type="button">그만하기</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const stages = {
+      setup: document.getElementById("setupStage"),
+      play: document.getElementById("playStage")
+    };
+    const minInput = document.getElementById("minTime");
+    const maxInput = document.getElementById("maxTime");
+    const bombCountInput = document.getElementById("bombCount");
+    const warningText = document.getElementById("warningText");
+    const startButton = document.getElementById("startButton");
+    const stopButton = document.getElementById("stopButton");
+    const bombGrid = document.getElementById("bombGrid");
+    const suspenseText = document.getElementById("suspenseText");
+    const decorLayer = document.getElementById("decorLayer");
+
+    const suspenseLines = [
+      "누구 손에서 펑 하고 터질까?",
+      "조금 전엔 조용했는데... 지금은 아닐지도!",
+      "도화선이 반짝일수록 마음은 콩닥콩닥!",
+      "폭탄이 얌전한 척하는 게 더 수상해!",
+      "다음 차례가 오기 전에 끝날 수도 있어!",
+      "한 번 더 넘어가면 안심일까? 글쎄!",
+      "교실 공기가 슬쩍 긴장으로 꽉 찼어요!",
+      "방금 흔들린 거 봤지? 나만 본 거 아니지?"
+    ];
+
+    const state = {
+      stage: "setup",
+      audioContext: null,
+      tickIntervalId: null,
+      stopRequested: false,
+      suspenseIntervalId: null,
+      activeTickIsHigh: true,
+      bombEntries: [],
+      resetTimeoutId: null
+    };
+
+    function showStage(name) {
+      Object.entries(stages).forEach(([key, node]) => {
+        node.classList.toggle("active", key === name);
+      });
+      state.stage = name;
+    }
+
+    function validateInputs() {
+      const min = Number(minInput.value);
+      const max = Number(maxInput.value);
+      const count = Number(bombCountInput.value);
+      let message = "";
+
+      if (!Number.isInteger(min) || !Number.isInteger(max) || min < 1 || max < 1) {
+        message = "초는 1 이상 정수로 넣어 주세요. 폭탄도 숫자는 정확히 셉니다!";
+      } else if (min >= max) {
+        message = "최소 시간은 최대 시간보다 작아야 해요. 안 그러면 폭탄이 삐질지도 몰라요!";
+      } else if (!Number.isInteger(count) || count < 1 || count > 10) {
+        message = "폭탄은 1개부터 10개까지예요. 너무 많으면 폭탄들도 정신이 없어요!";
+      }
+
+      warningText.textContent = message;
+      return message === "" ? { min, max, count } : null;
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function pickRandom(items) {
+      return items[Math.floor(Math.random() * items.length)];
+    }
+
+    function bombSvgMarkup(idBase) {
+      return `
+        <svg viewBox="0 0 320 320" role="img" aria-label="폭탄 캐릭터">
+          <defs>
+            <radialGradient id="${idBase}-bodyGloss" cx="35%" cy="28%" r="70%">
+              <stop offset="0%" stop-color="#5b5965"></stop>
+              <stop offset="42%" stop-color="#23212c"></stop>
+              <stop offset="100%" stop-color="#0f0f14"></stop>
+            </radialGradient>
+            <filter id="${idBase}-softGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
+              <feMerge>
+                <feMergeNode in="blur"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+              </feMerge>
+            </filter>
+          </defs>
+          <g id="fuseGroup">
+            <path d="M178 74 C194 36, 240 26, 257 48 C272 66, 264 83, 256 92" fill="none" stroke="#734a28" stroke-width="10" stroke-linecap="round"></path>
+            <path d="M180 74 C194 42, 234 34, 249 51 C259 63, 256 76, 251 84" fill="none" stroke="#b27842" stroke-width="4" stroke-linecap="round"></path>
+            <g id="sparkGroup" transform="translate(257 92)">
+              <g id="sparkRays" fill="#ffc928" stroke="#ff8d22" stroke-width="2"></g>
+              <circle r="12" fill="#ffd94d" filter="url(#${idBase}-softGlow)"></circle>
+              <circle r="7" fill="#ff8a24"></circle>
+              <circle r="3" fill="#fff4c7"></circle>
+            </g>
+          </g>
+          <g id="bombFace">
+            <circle cx="160" cy="180" r="104" fill="url(#${idBase}-bodyGloss)"></circle>
+            <ellipse cx="127" cy="130" rx="42" ry="25" fill="rgba(255,255,255,0.18)" transform="rotate(-24 127 130)"></ellipse>
+            <ellipse cx="126" cy="164" rx="30" ry="38" fill="#fffdf8"></ellipse>
+            <ellipse cx="194" cy="164" rx="30" ry="38" fill="#fffdf8"></ellipse>
+            <g id="normalFace">
+              <circle cx="132" cy="171" r="12" fill="#17151d"></circle>
+              <circle cx="199" cy="171" r="12" fill="#17151d"></circle>
+              <circle cx="127" cy="165" r="3.5" fill="#ffffff"></circle>
+              <circle cx="194" cy="165" r="3.5" fill="#ffffff"></circle>
+              <path d="M138 218 Q160 236 182 218" fill="none" stroke="#ffb1b1" stroke-width="7" stroke-linecap="round"></path>
+            </g>
+            <g id="surprisedFace" visibility="hidden">
+              <circle cx="132" cy="168" r="16" fill="#17151d"></circle>
+              <circle cx="199" cy="168" r="16" fill="#17151d"></circle>
+              <circle cx="125" cy="160" r="4.2" fill="#ffffff"></circle>
+              <circle cx="192" cy="160" r="4.2" fill="#ffffff"></circle>
+              <ellipse cx="166" cy="222" rx="17" ry="20" fill="#ffb1b1"></ellipse>
+            </g>
+            <ellipse cx="164" cy="256" rx="62" ry="14" fill="rgba(0,0,0,0.22)"></ellipse>
+          </g>
+        </svg>
+      `;
+    }
+
+    function renderSparkRays(container, count) {
+      const sparkRays = container.querySelector("#sparkRays");
+      if (!sparkRays) return;
+      let markup = "";
+      for (let i = 0; i < count; i += 1) {
+        const angle = (360 / count) * i;
+        const outer = 18 + Math.random() * 8;
+        const width = 4 + Math.random() * 5;
+        markup += `
+          <path transform="rotate(${angle})" d="M0,-11 L${width / 2},-${outer} L0,-${outer - 7} L-${width / 2},-${outer} Z"></path>
+        `;
+      }
+      sparkRays.innerHTML = markup;
+    }
+
+    function boomSvgMarkup() {
+      const rays = randomInt(9, 12);
+      let markup = "";
+      for (let i = 0; i < rays; i += 1) {
+        const angle = (360 / rays) * i;
+        const outer = 128 + Math.random() * 42;
+        const inner = 72 + Math.random() * 22;
+        const width = 16 + Math.random() * 12;
+        const color = ["#ffe55a", "#ff9c33", "#ff5f38"][i % 3];
+        markup += `<path transform="rotate(${angle} 160 160)" d="M160 ${160 - inner} L${160 + width} ${160 - outer} L160 ${160 - outer + 28} L${160 - width} ${160 - outer} Z" fill="${color}"></path>`;
+      }
+      return `
+        <svg viewBox="0 0 320 320" width="100%" height="100%" aria-hidden="true">
+          ${markup}
+          <circle cx="160" cy="160" r="82" fill="#fff38b"></circle>
+          <circle cx="160" cy="160" r="60" fill="#ff9b2d"></circle>
+          <circle cx="160" cy="160" r="40" fill="#ff5e37"></circle>
+        </svg>
+      `;
+    }
+
+    function renderBombGrid(count) {
+      let markup = "";
+      for (let i = 0; i < count; i += 1) {
+        markup += `
+          <article class="bomb-card" data-bomb-index="${i}">
+            <div class="bomb-label">${i + 1}모둠</div>
+            <div class="bomb-visual">
+              <div class="bomb-shell" data-role="shell" aria-hidden="true">${bombSvgMarkup(`bomb-${i}`)}</div>
+            </div>
+          </article>
+        `;
+      }
+      bombGrid.innerHTML = markup;
+
+      const cards = [...bombGrid.querySelectorAll(".bomb-card")];
+      state.bombEntries = cards.map((card, index) => {
+        const shell = card.querySelector('[data-role="shell"]');
+        renderSparkRays(shell, 10);
+        return {
+          index,
+          card,
+          shell,
+          finishTimeoutId: null,
+          surpriseTimeoutId: null,
+          shakeTimeoutId: null,
+          sparkIntervalId: null,
+          exploded: false
+        };
+      });
+    }
+
+    function createDecor() {
+      const types = ["star", "heart", "circle"];
+      let markup = "";
+      const count = randomInt(10, 15);
+      for (let i = 0; i < count; i += 1) {
+        const type = pickRandom(types);
+        const size = 24 + Math.random() * 34;
+        const left = Math.random() * 100;
+        const duration = 9 + Math.random() * 8;
+        const delay = -Math.random() * 12;
+        const opacity = 0.4 + Math.random() * 0.45;
+        markup += `
+          <div class="decor" style="left:${left}%; width:${size}px; height:${size}px; animation-duration:${duration}s; animation-delay:${delay}s; opacity:${opacity}">
+            ${decorSvg(type)}
+          </div>
+        `;
+      }
+      decorLayer.innerHTML = markup;
+    }
+
+    function decorSvg(type) {
+      if (type === "heart") {
+        return `
+          <svg viewBox="0 0 64 64">
+            <path d="M32 55 C18 45, 8 36, 8 23 C8 14, 15 8, 23 8 C28 8, 31 11, 32 14 C33 11, 36 8, 41 8 C49 8, 56 14, 56 23 C56 36, 46 45, 32 55 Z" fill="#ff8aa8"></path>
+          </svg>
+        `;
+      }
+      if (type === "circle") {
+        return `
+          <svg viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="21" fill="#7fd6c2"></circle>
+            <circle cx="25" cy="25" r="7" fill="rgba(255,255,255,0.45)"></circle>
+          </svg>
+        `;
+      }
+      return `
+        <svg viewBox="0 0 64 64">
+          <path d="M32 6 L38 22 L56 22 L42 33 L47 51 L32 40 L17 51 L22 33 L8 22 L26 22 Z" fill="#ffd552"></path>
+        </svg>
+      `;
+    }
+
+    function ensureAudioContext() {
+      if (!state.audioContext) {
+        state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (state.audioContext.state === "suspended") {
+        state.audioContext.resume();
+      }
+      return state.audioContext;
+    }
+
+    function createNoiseBuffer(context, durationSeconds) {
+      const length = Math.max(1, Math.floor(context.sampleRate * durationSeconds));
+      const buffer = context.createBuffer(1, length, context.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i += 1) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      return buffer;
+    }
+
+    function playTick() {
+      const context = ensureAudioContext();
+      const now = context.currentTime;
+      const noise = context.createBufferSource();
+      noise.buffer = createNoiseBuffer(context, 0.08);
+
+      const primaryFilter = context.createBiquadFilter();
+      const secondaryFilter = context.createBiquadFilter();
+      const gain = context.createGain();
+
+      if (state.activeTickIsHigh) {
+        primaryFilter.type = "highpass";
+        primaryFilter.frequency.value = 2200;
+        secondaryFilter.type = "bandpass";
+        secondaryFilter.frequency.value = 3100;
+        secondaryFilter.Q.value = 1.4;
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.24, now + 0.004);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      } else {
+        primaryFilter.type = "lowpass";
+        primaryFilter.frequency.value = 1200;
+        secondaryFilter.type = "highpass";
+        secondaryFilter.frequency.value = 420;
+        secondaryFilter.Q.value = 0.9;
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.32, now + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+      }
+
+      noise.connect(primaryFilter);
+      primaryFilter.connect(secondaryFilter);
+      secondaryFilter.connect(gain);
+      gain.connect(context.destination);
+      noise.start(now);
+      noise.stop(now + 0.09);
+      state.activeTickIsHigh = !state.activeTickIsHigh;
+    }
+
+    function playExplosion() {
+      const context = ensureAudioContext();
+      const now = context.currentTime;
+
+      const master = context.createGain();
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(0.95, now + 0.02);
+      master.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+      master.connect(context.destination);
+
+      const noise = context.createBufferSource();
+      noise.buffer = createNoiseBuffer(context, 1.5);
+      const band = context.createBiquadFilter();
+      band.type = "bandpass";
+      band.frequency.setValueAtTime(520, now);
+      band.Q.value = 0.6;
+      const noiseGain = context.createGain();
+      noiseGain.gain.setValueAtTime(0.001, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.8, now + 0.015);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      noise.connect(band);
+      band.connect(noiseGain);
+      noiseGain.connect(master);
+
+      const osc = context.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(80, now);
+      osc.frequency.exponentialRampToValueAtTime(34, now + 1.1);
+      const oscGain = context.createGain();
+      oscGain.gain.setValueAtTime(0.001, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.7, now + 0.02);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
+      osc.connect(oscGain);
+      oscGain.connect(master);
+
+      const rumble = context.createOscillator();
+      rumble.type = "sine";
+      rumble.frequency.setValueAtTime(46, now);
+      rumble.frequency.exponentialRampToValueAtTime(22, now + 1.4);
+      const rumbleGain = context.createGain();
+      rumbleGain.gain.setValueAtTime(0.001, now);
+      rumbleGain.gain.exponentialRampToValueAtTime(0.32, now + 0.06);
+      rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 1.45);
+      rumble.connect(rumbleGain);
+      rumbleGain.connect(master);
+
+      noise.start(now);
+      noise.stop(now + 1.5);
+      osc.start(now);
+      osc.stop(now + 1.3);
+      rumble.start(now);
+      rumble.stop(now + 1.5);
+    }
+
+    function setNormalFace(entry) {
+      const normalFace = entry.shell.querySelector("#normalFace");
+      const surprisedFace = entry.shell.querySelector("#surprisedFace");
+      if (!normalFace || !surprisedFace) return;
+      normalFace.setAttribute("visibility", "visible");
+      surprisedFace.setAttribute("visibility", "hidden");
+    }
+
+    function flashSurprisedFace(entry) {
+      if (state.stage !== "play" || entry.exploded) return;
+      const normalFace = entry.shell.querySelector("#normalFace");
+      const surprisedFace = entry.shell.querySelector("#surprisedFace");
+      if (!normalFace || !surprisedFace) return;
+      normalFace.setAttribute("visibility", "hidden");
+      surprisedFace.setAttribute("visibility", "visible");
+      clearTimeout(entry.surpriseTimeoutId);
+      entry.surpriseTimeoutId = setTimeout(() => setNormalFace(entry), 180 + Math.random() * 260);
+    }
+
+    function pulseSpark(entry) {
+      if (entry.exploded) return;
+      const sparkGroup = entry.shell.querySelector("#sparkGroup");
+      if (!sparkGroup) return;
+      const scale = 0.82 + Math.random() * 0.7;
+      const rotate = -18 + Math.random() * 36;
+      sparkGroup.setAttribute("transform", `translate(257 92) scale(${scale.toFixed(2)}) rotate(${rotate.toFixed(1)})`);
+      if (Math.random() > 0.6) {
+        renderSparkRays(entry.shell, randomInt(8, 12));
+      }
+    }
+
+    function scheduleBombShake(entry) {
+      clearTimeout(entry.shakeTimeoutId);
+      if (state.stage !== "play" || entry.exploded) return;
+      entry.shakeTimeoutId = setTimeout(() => {
+        entry.shell.classList.remove("shake");
+        void entry.shell.offsetWidth;
+        entry.shell.classList.add("shake");
+        if (Math.random() > 0.55) {
+          flashSurprisedFace(entry);
+        }
+        scheduleBombShake(entry);
+      }, 650 + Math.random() * 1900);
+    }
+
+    function startSuspenseLoop() {
+      suspenseText.textContent = pickRandom(suspenseLines);
+      clearInterval(state.suspenseIntervalId);
+      state.suspenseIntervalId = setInterval(() => {
+        suspenseText.textContent = pickRandom(suspenseLines);
+        const aliveEntries = state.bombEntries.filter((entry) => !entry.exploded);
+        if (aliveEntries.length > 0 && Math.random() > 0.72) {
+          flashSurprisedFace(pickRandom(aliveEntries));
+        }
+      }, 1400);
+    }
+
+    function startBombEffects(entry) {
+      pulseSpark(entry);
+      clearInterval(entry.sparkIntervalId);
+      entry.sparkIntervalId = setInterval(() => pulseSpark(entry), 180 + Math.random() * 220);
+      scheduleBombShake(entry);
+    }
+
+    function clearBombEntry(entry) {
+      clearTimeout(entry.finishTimeoutId);
+      clearTimeout(entry.surpriseTimeoutId);
+      clearTimeout(entry.shakeTimeoutId);
+      clearInterval(entry.sparkIntervalId);
+      entry.finishTimeoutId = null;
+      entry.surpriseTimeoutId = null;
+      entry.shakeTimeoutId = null;
+      entry.sparkIntervalId = null;
+      entry.shell?.classList.remove("shake");
+      if (!entry.exploded) {
+        setNormalFace(entry);
+      }
+    }
+
+    function clearRunningEffects() {
+      clearInterval(state.tickIntervalId);
+      clearInterval(state.suspenseIntervalId);
+      clearTimeout(state.resetTimeoutId);
+      state.tickIntervalId = null;
+      state.suspenseIntervalId = null;
+      state.resetTimeoutId = null;
+      state.bombEntries.forEach(clearBombEntry);
+    }
+
+    function returnToSetup() {
+      state.stopRequested = true;
+      clearRunningEffects();
+      bombGrid.innerHTML = "";
+      state.bombEntries = [];
+      showStage("setup");
+    }
+
+    function allBombsExploded() {
+      return state.bombEntries.length > 0 && state.bombEntries.every((entry) => entry.exploded);
+    }
+
+    function explodeBomb(entry) {
+      if (state.stopRequested || entry.exploded) return;
+      clearBombEntry(entry);
+      entry.exploded = true;
+      entry.card.classList.add("exploded");
+      entry.card.querySelector(".bomb-visual").innerHTML = `
+        <div class="boom-slot active" aria-hidden="true">
+          ${boomSvgMarkup()}
+          <div class="boom-text">펑!</div>
+        </div>
+      `;
+      playExplosion();
+      if (allBombsExploded()) {
+        suspenseText.textContent = "모든 모둠 폭탄이 펑! 하고 끝났어요. 잠시 뒤 다시 시작해요!";
+        state.resetTimeoutId = setTimeout(() => {
+          returnToSetup();
+        }, 2500);
+      }
+    }
+
+    function startGame() {
+      const values = validateInputs();
+      if (!values) return;
+
+      state.stopRequested = false;
+      clearRunningEffects();
+      renderBombGrid(values.count);
+      showStage("play");
+      ensureAudioContext();
+      state.activeTickIsHigh = true;
+      playTick();
+      state.tickIntervalId = setInterval(playTick, 520);
+      startSuspenseLoop();
+      state.bombEntries.forEach((entry) => {
+        startBombEffects(entry);
+        const durationSeconds = randomInt(values.min, values.max);
+        entry.finishTimeoutId = setTimeout(() => explodeBomb(entry), durationSeconds * 1000);
+      });
+    }
+
+    [minInput, maxInput, bombCountInput].forEach((input) => {
+      input.addEventListener("input", validateInputs);
+    });
+    startButton.addEventListener("click", startGame);
+    stopButton.addEventListener("click", returnToSetup);
+
+    createDecor();
+    validateInputs();
+  </script>
+</body>
+</html>
